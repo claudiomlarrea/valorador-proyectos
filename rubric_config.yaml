@@ -1,0 +1,18 @@
+# Placeholder de configuración avanzada (para futuras versiones).
+# Puedes extender este archivo y luego hacer que app.py lo lea.
+cuerpo:
+  max: 75
+  min_requerido: 45
+equipo:
+  max: 25
+  min_requerido: 10
+global:
+  min_requerido: 60
+categorias_equipo:
+  Investigador/a Superior I: 6
+  Investigador/a Principal II: 5
+  Investigador/a Independiente III: 4
+  Investigador/a Adjunto/a IV: 3
+  Investigador/a Asistente V: 2
+  Becario/a de Iniciación VI: 1
+  Sin categorización / Externo: 0
