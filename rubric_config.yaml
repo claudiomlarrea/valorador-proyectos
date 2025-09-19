@@ -1,5 +1,3 @@
-# Placeholder de configuración avanzada (para futuras versiones).
-# Puedes extender este archivo y luego hacer que app.py lo lea.
 cuerpo:
   max: 75
   min_requerido: 45
