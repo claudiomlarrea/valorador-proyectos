@@ -5,9 +5,6 @@ import io
 
 st.set_page_config(page_title="Valorador / Rúbrica – Calculadora", page_icon="🧮", layout="centered")
 
-# -----------------------------
-# Config defaults (can be edited in sidebar)
-# -----------------------------
 st.sidebar.title("Configuración de la rúbrica")
 st.sidebar.caption("Puedes ajustar los máximos y mínimos globales.")
 
@@ -37,11 +34,11 @@ for name, default in default_cats.items():
 
 st.title("🧮 Valorador / Rúbrica – Calculadora automática")
 
-st.markdown("""
+st.markdown(f"""
 Esta calculadora implementa las condiciones de aprobación pactadas:
-- **APROBADO** solo si **Equipo ≥ {eq_min}**, **Cuerpo ≥ {cu_min}** y **Total ≥ {glob_min}**.
+- **APROBADO** solo si **Equipo ≥ {EQUIPO_MIN_REQ}**, **Cuerpo ≥ {CUERPO_MIN_REQ}** y **Total ≥ {GLOBAL_MIN_REQ}**.
 - En cualquier otro caso: **NO APROBADO**.
-""".format(eq_min=EQUIPO_MIN_REQ, cu_min=CUERPO_MIN_REQ, glob_min=GLOBAL_MIN_REQ))
+""")
 
 with st.expander("Opcional: cargar un archivo Excel de tu rúbrica (XLSX/XLSM) para adjuntar al informe"):
     uploaded = st.file_uploader("Sube tu plantilla (opcional)", type=["xlsx", "xlsm"])
@@ -53,7 +50,6 @@ st.caption("Elige una categoría; el puntaje se asigna automáticamente según l
 equipo_cat = st.selectbox("Categoría del/la Investigador/a", list(categories.keys()), index=0)
 equipo_pts_auto = categories.get(equipo_cat, 0)
 
-# Permitir agregar puntajes adicionales de equipo que se sumen (componentes)
 with st.expander("Componentes adicionales de Equipo (se suman) – opcional"):
     comp_cols = st.columns(3)
     comp_a = comp_cols[0].number_input("Componente A", min_value=0, max_value=1000, value=0, step=1)
@@ -79,7 +75,7 @@ with tab2:
     cuerpo_sum = 0
     item_min_breaches = []
     for i in range(1, n_items+1):
-        with st.container(border=True):
+        with st.container():
             st.subheader(f"Ítem {i}")
             col = st.columns(3)
             nombre = col[0].text_input(f"Nombre del ítem {i}", value=f"Ítem {i}")
@@ -93,16 +89,12 @@ with tab2:
     if item_min_breaches:
         st.warning("Algunos ítems están por debajo de su mínimo requerido: " + ", ".join([f"{n} ({p}/{m})" for n,m,p in item_min_breaches]))
 
-# Seleccionar el puntaje de Cuerpo definitivo (si hay desglose, se puede usar ese)
 use_items = st.toggle("Usar el puntaje del desglose por ítems como puntaje final del Cuerpo", value=False)
 cuerpo_total = int(cuerpo_sum if use_items else cuerpo_global)
 cuerpo_total = min(cuerpo_total, CUERPO_MAX)
 
 st.metric("Puntaje Cuerpo", f"{cuerpo_total} / {CUERPO_MAX}", delta=None)
 
-# -----------------------------
-# Totales y regla de aprobación
-# -----------------------------
 total = cuerpo_total + equipo_total
 aprobado = (equipo_total >= EQUIPO_MIN_REQ) and (cuerpo_total >= CUERPO_MIN_REQ) and (total >= GLOBAL_MIN_REQ)
 
@@ -114,9 +106,6 @@ cols[2].metric("Condición – Cuerpo", f"{'OK' if cuerpo_total >= CUERPO_MIN_RE
 
 st.success("✅ **APROBADO**") if aprobado else st.error("❌ **NO APROBADO**")
 
-# -----------------------------
-# Exportar Informe
-# -----------------------------
 st.divider()
 st.subheader("Exportar informe")
 persona = st.text_input("Nombre del proyecto / postulante", value="Proyecto sin nombre")
@@ -129,8 +118,8 @@ df_resumen = pd.DataFrame([{
     "Cuerpo": cuerpo_total,
     "Total": total,
     "Aprobado": "APROBADO" if aprobado else "NO APROBADO",
-    "Condición Equipo (mín {})".format(EQUIPO_MIN_REQ): "OK" if equipo_total >= EQUIPO_MIN_REQ else "NO",
-    "Condición Cuerpo (mín {})".format(CUERPO_MIN_REQ): "OK" if cuerpo_total >= CUERPO_MIN_REQ else "NO",
+    f"Condición Equipo (mín {EQUIPO_MIN_REQ})": "OK" if equipo_total >= EQUIPO_MIN_REQ else "NO",
+    f"Condición Cuerpo (mín {CUERPO_MIN_REQ})": "OK" if cuerpo_total >= CUERPO_MIN_REQ else "NO",
     "Mínimo Global requerido": GLOBAL_MIN_REQ,
     "Observaciones": observ
 }])
@@ -138,22 +127,19 @@ df_resumen = pd.DataFrame([{
 st.dataframe(df_resumen, use_container_width=True)
 
 def to_excel_bytes(df: pd.DataFrame) -> bytes:
-    import io
-    with pd.ExcelWriter(io.BytesIO(), engine="xlsxwriter") as writer:
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="xlsxwriter") as writer:
         df.to_excel(writer, index=False, sheet_name="Resumen")
-        workbook  = writer.book
         worksheet = writer.sheets["Resumen"]
-        for idx, col in enumerate(df.columns, 1):
+        for idx, col in enumerate(df.columns):
             col_len = max(df[col].astype(str).map(len).max(), len(col)) + 2
-            worksheet.set_column(idx-1, idx-1, col_len)
-        writer.save()
-        data = writer.book.filename.getvalue()
-    return data
+            worksheet.set_column(idx, idx, col_len)
+    buf.seek(0)
+    return buf.getvalue()
 
 excel_bytes = to_excel_bytes(df_resumen)
 st.download_button("⬇️ Descargar resumen en Excel", data=excel_bytes, file_name="resumen_valorador.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-# Adjuntar también el archivo de rúbrica cargado (si hubo uno)
 if uploaded is not None:
     st.download_button("⬇️ Descargar copia del archivo subido", data=uploaded_bytes, file_name=uploaded.name)
 
