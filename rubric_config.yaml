@@ -1,7 +1,12 @@
-cuerpo:
-  max: 75
-  min_requerido: 45
-equipo:
-  min_requerido: 10
-global:
-  min_requerido: 60
+# Cada ítem: [seccion, item, criterio_clave, escala]
+# La escala es una lista de pares [etiqueta, valor]
+items:
+  - [ "Metodología", "Diseño del estudio", "disenio",         [ ["Insuficiente",1], ["Adecuado",2], ["Excelente",3] ] ]
+  - [ "Metodología", "Muestreo",          "muestreo",         [ ["Insuficiente",1], ["Adecuado",2], ["Excelente",3] ] ]
+  - [ "Metodología", "Instrumentos",      "instrumentos",     [ ["Insuficiente",1], ["Adecuado",2], ["Excelente",3] ] ]
+
+  - [ "Resultados",   "Calidad de datos", "calidad_datos",    [ ["Insuficiente",1], ["Adecuado",2], ["Excelente",3] ] ]
+  - [ "Resultados",   "Análisis",         "analisis",         [ ["Insuficiente",1], ["Adecuado",2], ["Excelente",3] ] ]
+
+  - [ "Discusión",    "Coherencia",       "coherencia",       [ ["Insuficiente",1], ["Adecuado",2], ["Excelente",3] ] ]
+  - [ "Discusión",    "Relevancia",       "relevancia",       [ ["Insuficiente",1], ["Adecuado",2], ["Excelente",3] ] ]
